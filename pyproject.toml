@@ -14,6 +14,8 @@ dev = [
 
 [tool.uv]
 package = false
+# tflite-runtime has no Python 3.12+ wheels; openwakeword falls back to onnxruntime automatically
+override-dependencies = ["tflite-runtime; python_version < '3.12'"]
 
 [tool.uv.workspace]
 members = ["client", "server"]

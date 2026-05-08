@@ -9,10 +9,10 @@ server_port: 8765
 server_url: ws://localhost:8765  # change to Pi IP for split setup
 
 language: fr
-wake_word: ok_couch
+wake_word: hey_jarvis             # built-in placeholder — train custom "hey couch" model later
 
 session_mode: continuous         # single | continuous
-session_timeout: 30              # seconds of silence before auto-close
+session_timeout: 5               # seconds of silence before auto-close
 stop_phrase: "arrête d'écouter"  # voice command to end session
 
 input_device: default            # mic device (headset, Anker S500, etc.)

@@ -23,6 +23,7 @@ BEEPS: dict[str, tuple[float, float]] = {
     "beep_ready": (880.0, 0.15),   # high pitch — "listening"
     "beep_ok":    (660.0, 0.12),   # mid pitch  — "done"
     "beep_error": (330.0, 0.25),   # low pitch  — "error"
+    "beep_close": (520.0, 0.20),   # falling pitch — "session closed"
 }
 
 
