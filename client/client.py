@@ -149,6 +149,13 @@ async def main() -> None:
                     with contextlib.suppress(asyncio.CancelledError):
                         await t
 
+                # Discard buffered audio and reset all OWW internal state
+                # (mel-spectrogram buffer, embeddings, prediction scores) so
+                # the session's audio doesn't immediately re-trigger detection.
+                while not audio_q.empty():
+                    audio_q.get_nowait()
+                oww.reset()
+
                 await _send(ws, {"type": "status", "data": "ready"})
                 log.info("session closed — listening for wake word...")
 
