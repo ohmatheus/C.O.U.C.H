@@ -219,3 +219,6 @@ __marimo__/
 
 
 /_plan/
+
+# Generated audio assets (run assets/generate_beeps.py to recreate)
+/assets/*.wav

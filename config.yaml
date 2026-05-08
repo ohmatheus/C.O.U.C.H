@@ -9,7 +9,7 @@ server_port: 8765
 server_url: ws://localhost:8765  # change to Pi IP for split setup
 
 language: fr
-wake_word: hey_couch
+wake_word: ok_couch
 
 session_mode: continuous         # single | continuous
 session_timeout: 30              # seconds of silence before auto-close

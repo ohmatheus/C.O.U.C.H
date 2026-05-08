@@ -1,4 +1,5 @@
 import asyncio
+import base64
 import json
 import logging
 from pathlib import Path
@@ -24,6 +25,7 @@ async def _send(ws: ServerConnection, msg: dict[str, Any]) -> None:
 
 async def handle_client(ws: ServerConnection) -> None:
     log.info("client connected: %s", ws.remote_address)
+    audio_chunks: int = 0
     try:
         async for raw in ws:
             msg: dict[str, Any] = json.loads(raw)
@@ -31,18 +33,26 @@ async def handle_client(ws: ServerConnection) -> None:
 
             if msg_type == "ping":
                 await _send(ws, {"type": "pong"})
+
             elif msg_type == "audio":
-                # stub — will route to pipeline in step 2
-                log.info("audio bytes received: %d bytes", len(msg.get("data", "")))
+                audio_bytes = base64.b64decode(msg["data"])
+                audio_chunks += 1
+                log.info("audio chunk #%d: %d bytes", audio_chunks, len(audio_bytes))
+                # Send beep_ok once to confirm the pipeline is alive.
+                # In step 4 this becomes: accumulate → STT → LLM → feedback.
+                if audio_chunks == 1:
+                    await _send(ws, {"type": "feedback", "data": "beep_ok"})
+
             elif msg_type == "status":
                 log.info("client status: %s", msg.get("data"))
+
             else:
                 log.warning("unknown message type: %s", msg_type)
 
     except Exception as exc:
         log.error("connection error: %s", exc)
     finally:
-        log.info("client disconnected")
+        log.info("client disconnected after %d audio chunks", audio_chunks)
 
 
 async def main() -> None:
@@ -52,7 +62,7 @@ async def main() -> None:
     log.info("starting on %s:%s", host, port)
     async with serve(handle_client, host, port):
         log.info("ready — waiting for client")
-        await asyncio.get_running_loop().create_future()  # run forever
+        await asyncio.get_running_loop().create_future()
 
 
 if __name__ == "__main__":
