@@ -1,15 +1,21 @@
-whisper_model: large-v3        # tiny / base / small / medium / large-v3
-whisper_device: cpu            # cpu (recommended) or cuda
+whisper_model: large-v3
+whisper_device: cpu           # cpu recommended to keep VRAM for LLM + browser
+
 llm_model: qwen2.5:7b
-llm_keepalive: -1              # never unload from VRAM
+llm_keepalive: -1             # never unload from VRAM
 
 server_host: 0.0.0.0
 server_port: 8765
-server_url: ws://localhost:8765  # change to Pi address for split setup
+server_url: ws://localhost:8765  # change to Pi IP for split setup
 
 language: fr
 wake_word: hey_couch
 
-feedback_device: default       # audio output device name
-feedback_mode: beep            # beep (wav files) or tts (piper-tts)
-tts_model: fr_FR-siwis-medium  # piper french model, only used if feedback_mode: tts
+session_mode: continuous         # single | continuous
+session_timeout: 30              # seconds of silence before auto-close
+stop_phrase: "arrête d'écouter"  # voice command to end session
+
+input_device: default            # mic device (headset, Anker S500, etc.)
+feedback_device: default         # audio output device
+feedback_mode: beep              # beep (wav files) | tts (piper-tts)
+tts_model: fr_FR-siwis-medium    # only used if feedback_mode: tts
