@@ -1,5 +1,5 @@
 whisper_model: large-v3
-whisper_device: cpu           # cpu recommended to keep VRAM for LLM + browser
+whisper_device: cuda          # int8_float16 on GPU — ~1.5 GB VRAM (leaves room for LLM)
 
 llm_model: qwen2.5:7b
 llm_keepalive: -1             # never unload from VRAM
