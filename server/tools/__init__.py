@@ -50,7 +50,7 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
         "type": "function",
         "function": {
             "name": "stop_listening",
-            "description": "End the listening session and return to standby. Call ONLY when the user explicitly asks to stop (e.g. 'stop listening', 'go to sleep', 'stop').",
+            "description": "End the listening session and return to standby. Call ONLY when the user explicitly asks to stop (e.g. 'stop listening', 'go to sleep', 'stop', 'stop the session').",
             "parameters": {"type": "object", "properties": {}},
         },
     },

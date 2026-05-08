@@ -71,6 +71,7 @@ async def main() -> None:
     agent = Agent(
         model=cfg["llm_model"],
         keepalive=cfg.get("llm_keepalive", -1),
+        language=cfg.get("language", "en"),
         state=APP_STATE,
     )
 

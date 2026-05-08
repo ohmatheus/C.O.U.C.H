@@ -12,7 +12,7 @@ _MAX_TOOL_CALLS: int = 5
 
 _SYSTEM_PROMPT = """\
 You are C.O.U.C.H, a local voice assistant that controls the user's computer.
-You receive voice commands (transcribed speech) and call the available tools to execute them.
+You receive voice commands as transcribed speech in {language} and call the available tools to execute them.
 
 Strict rules:
 - Call a tool ONLY when the command clearly matches its description.
@@ -24,14 +24,16 @@ Strict rules:
 class Agent:
     """Ollama agentic loop: transcript → tool calls → feedback signal."""
 
-    def __init__(self, model: str, keepalive: int, state: dict[str, Any]) -> None:
+    def __init__(self, model: str, keepalive: int, language: str, state: dict[str, Any]) -> None:
         self._model = model
         self._keepalive = keepalive
+        self._language = language
         self._state = state
 
     def _build_system_prompt(self) -> str:
+        prompt = _SYSTEM_PROMPT.format(language=self._language)
         state_summary = json.dumps(self._state, ensure_ascii=False, indent=2)
-        return f"{_SYSTEM_PROMPT}\nÉtat actuel du système :\n{state_summary}"
+        return f"{prompt}\nCurrent system state:\n{state_summary}"
 
     def run(self, transcript: str) -> str | None:
         """Run the agentic loop for one transcript. Blocking — call in executor.
