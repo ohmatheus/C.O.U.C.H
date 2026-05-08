@@ -36,6 +36,32 @@ cd "$SCRIPT_DIR"
 uv sync --all-packages --quiet
 success "Python dependencies installed"
 
+# ── System tools ─────────────────────────────────────────────────────────────
+if ! command -v xdotool &>/dev/null; then
+    info "Installing xdotool (required for press_key tool)..."
+    sudo apt-get install -y xdotool 2>/dev/null || sudo dnf install -y xdotool 2>/dev/null || \
+        info "Could not auto-install xdotool — install it manually: apt install xdotool"
+fi
+
+# ── Google Chrome ─────────────────────────────────────────────────────────────
+if ! command -v google-chrome &>/dev/null && ! command -v google-chrome-stable &>/dev/null; then
+    info "Installing Google Chrome..."
+    if command -v dnf &>/dev/null; then
+        sudo dnf install -y https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm
+    elif command -v apt-get &>/dev/null; then
+        curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | sudo gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg
+        echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] https://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
+        sudo apt-get update -q && sudo apt-get install -y google-chrome-stable
+    else
+        info "Could not auto-install Chrome — install it manually from https://google.com/chrome"
+    fi
+fi
+
+# ── Playwright Chromium ───────────────────────────────────────────────────────
+info "Installing Playwright Chromium browser..."
+uv run playwright install chromium --quiet
+success "Playwright Chromium ready"
+
 # ── Ollama ────────────────────────────────────────────────────────────────────
 if ! command -v ollama &>/dev/null; then
     info "Installing Ollama..."

@@ -11,7 +11,7 @@ def set_volume(level: int, state: dict[str, Any], **_kwargs: object) -> str:
         check=True,
     )
     state["volume"] = level
-    return f"Volume réglé à {level}%"
+    return f"Volume set to {level}%"
 
 
 def volume_up(state: dict[str, Any], **_kwargs: object) -> str:
@@ -21,7 +21,7 @@ def volume_up(state: dict[str, Any], **_kwargs: object) -> str:
     )
     new_vol = min(100, state["volume"] + 10)
     state["volume"] = new_vol
-    return f"Volume augmenté (environ {new_vol}%)"
+    return f"Volume increased (approximately {new_vol}%)"
 
 
 def volume_down(state: dict[str, Any], **_kwargs: object) -> str:
@@ -31,12 +31,17 @@ def volume_down(state: dict[str, Any], **_kwargs: object) -> str:
     )
     new_vol = max(0, state["volume"] - 10)
     state["volume"] = new_vol
-    return f"Volume diminué (environ {new_vol}%)"
+    return f"Volume decreased (approximately {new_vol}%)"
 
 
 def stop_listening(state: dict[str, Any], **_kwargs: object) -> str:
     state["active_app"] = None
     return STOP_SENTINEL
+
+
+def press_key(key: str, **_kwargs: object) -> str:
+    subprocess.run(["xdotool", "key", key], check=True)
+    return f"Key pressed: {key}"
 
 
 def do_nothing(**_: object) -> str:

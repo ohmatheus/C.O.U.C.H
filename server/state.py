@@ -7,4 +7,5 @@ APP_STATE: dict[str, Any] = {
     "last_search": None,
     "last_error": None,
     "command_history": [],
+    "browser_results": [],  # video titles currently visible in the browser
 }

@@ -10,6 +10,7 @@ import yaml
 from agent import Agent
 from pipeline import Pipeline, load_pipeline
 from state import APP_STATE
+from tools.browser_manager import BROWSER
 from websockets.asyncio.server import ServerConnection, serve
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [server] %(message)s", datefmt="%H:%M:%S")
@@ -102,13 +103,30 @@ async def main() -> None:
 
     session_timeout: int = cfg.get("session_timeout", 30)
 
+    chrome_path_cfg: str = cfg.get("browser_chrome_path", "auto")
+    if chrome_path_cfg == "auto":
+        from tools.browser_manager import find_chrome
+        chrome_path: str | None = find_chrome()
+        log.info("browser: %s", chrome_path or "Playwright's bundled Chromium")
+    elif chrome_path_cfg == "playwright":
+        chrome_path = None
+    else:
+        chrome_path = chrome_path_cfg
+    BROWSER.configure(chrome_path=chrome_path)
+
+    from tools.browser import configure as configure_browser
+    configure_browser(search_limit=cfg.get("browser_search_limit", 10))
+
     host: str = cfg["server_host"]
     port: int = cfg["server_port"]
     log.info("starting on %s:%s", host, port)
     handler = functools.partial(handle_client, pipeline=pipeline, agent=agent, session_timeout=session_timeout)
-    async with serve(handler, host, port):
-        log.info("ready — waiting for client")
-        await asyncio.get_running_loop().create_future()
+    try:
+        async with serve(handler, host, port):
+            log.info("ready — waiting for client")
+            await asyncio.get_running_loop().create_future()
+    finally:
+        BROWSER.stop()
 
 
 if __name__ == "__main__":
