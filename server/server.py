@@ -23,9 +23,30 @@ def load_config() -> dict[str, Any]:
         return yaml.safe_load(f)  # type: ignore[no-any-return]
 
 
-async def handle_client(ws: ServerConnection, pipeline: Pipeline, agent: Agent) -> None:
+async def handle_client(
+    ws: ServerConnection, pipeline: Pipeline, agent: Agent, session_timeout: int
+) -> None:
     log.info("client connected: %s", ws.remote_address)
     loop = asyncio.get_running_loop()
+    idle_task: asyncio.Task[None] | None = None
+
+    async def _fire_idle() -> None:
+        await asyncio.sleep(session_timeout)
+        log.info("idle timeout — closing session")
+        await ws.send(json.dumps({"type": "session_end"}))
+
+    def _reset_idle() -> None:
+        nonlocal idle_task
+        if idle_task is not None:
+            idle_task.cancel()
+        idle_task = asyncio.create_task(_fire_idle())
+
+    def _cancel_idle() -> None:
+        nonlocal idle_task
+        if idle_task is not None:
+            idle_task.cancel()
+            idle_task = None
+
     try:
         async for raw in ws:
             msg: dict[str, Any] = json.loads(raw)
@@ -36,6 +57,7 @@ async def handle_client(ws: ServerConnection, pipeline: Pipeline, agent: Agent) 
                 log.info("client status: %s", data)
                 if data == "listening":
                     pipeline.start()
+                    _reset_idle()
                     await ws.send(json.dumps({"type": "feedback", "data": "beep_ok"}))
 
             elif msg_type == "audio":
@@ -43,11 +65,13 @@ async def handle_client(ws: ServerConnection, pipeline: Pipeline, agent: Agent) 
                 speech = pipeline.feed(audio_bytes)
                 if speech is not None:
                     transcript = await loop.run_in_executor(None, pipeline.transcribe, speech)
+                    _reset_idle()
                     if transcript:
                         log.info("transcript: %s", transcript)
                         feedback = await loop.run_in_executor(None, agent.run, transcript)
                         if feedback == "session_end":
                             log.info("session closed by agent")
+                            _cancel_idle()
                             await ws.send(json.dumps({"type": "session_end"}))
                         elif feedback is not None:
                             await ws.send(json.dumps({"type": "feedback", "data": feedback}))
@@ -58,6 +82,7 @@ async def handle_client(ws: ServerConnection, pipeline: Pipeline, agent: Agent) 
     except Exception as exc:
         log.error("connection error: %s", exc)
     finally:
+        _cancel_idle()
         log.info("client disconnected")
 
 
@@ -75,10 +100,12 @@ async def main() -> None:
         state=APP_STATE,
     )
 
+    session_timeout: int = cfg.get("session_timeout", 30)
+
     host: str = cfg["server_host"]
     port: int = cfg["server_port"]
     log.info("starting on %s:%s", host, port)
-    handler = functools.partial(handle_client, pipeline=pipeline, agent=agent)
+    handler = functools.partial(handle_client, pipeline=pipeline, agent=agent, session_timeout=session_timeout)
     async with serve(handler, host, port):
         log.info("ready — waiting for client")
         await asyncio.get_running_loop().create_future()
