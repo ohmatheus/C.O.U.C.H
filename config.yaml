@@ -17,6 +17,7 @@ session_timeout: 30                   # seconds of silence before auto-close
 
 browser_chrome_path: auto             # auto-detect system Chrome, explicit path, or 'playwright' for bundled Chromium
 browser_search_limit: 10              # number of YouTube search results returned to the LLM
+browser_scroll_px: 400               # pixels per scroll_up / scroll_down command
 
 log_level: DEBUG                      # DEBUG | INFO | WARNING
 

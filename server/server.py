@@ -13,6 +13,7 @@ from llm import create_provider
 from pipeline import Pipeline, load_pipeline
 from state import APP_STATE
 from tools.browser.manager import BROWSER, find_chrome
+from tools.browser.chrome.impl import configure as configure_chrome
 from tools.browser.youtube.impl import configure as configure_browser
 from websockets.asyncio.server import ServerConnection, serve
 
@@ -128,6 +129,7 @@ async def main() -> None:
         chrome_path = chrome_path_cfg
     BROWSER.configure(chrome_path=chrome_path)
 
+    configure_chrome(scroll_px=cfg.get("browser_scroll_px", 400))
     configure_browser(search_limit=cfg.get("browser_search_limit", 10))
 
     host: str = cfg["server_host"]
