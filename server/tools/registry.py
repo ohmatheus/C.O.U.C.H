@@ -31,6 +31,7 @@ def _assert_params_match(cls: type) -> None:
 class ToolEntry:
     name: ClassVar[str]
     description: ClassVar[str]
+    requires_vision: ClassVar[bool] = False
     params_model: ClassVar[type[ToolParams]] = ToolParams
     fn: ClassVar[Callable[..., str]]
 

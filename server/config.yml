@@ -1,0 +1,3 @@
+enable_vision: true
+max_command_history: 5
+max_error_history: 3

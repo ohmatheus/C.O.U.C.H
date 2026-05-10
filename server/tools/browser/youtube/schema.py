@@ -13,6 +13,7 @@ from tools.browser.youtube.impl import (
 class YoutubeSearch(ToolEntry):
     name = "youtube_search"
     description = "Search YouTube for specific content and return the top results as a numbered list of titles. Do NOT use this to open YouTube — use goto_url for that."
+    requires_vision = True
     fn = staticmethod(youtube_search)
 
     class Params(ToolParams):
@@ -22,6 +23,7 @@ class YoutubeSearch(ToolEntry):
 class YoutubePlayResult(ToolEntry):
     name = "youtube_play_result"
     description = "Play the YouTube video at the given position in the current page (search results or homepage). Use browser_results from state to match a title to an index."
+    requires_vision = True
     fn = staticmethod(youtube_play_result)
 
     class Params(ToolParams):

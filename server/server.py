@@ -8,12 +8,12 @@ from typing import Any
 
 import yaml
 from agent import Agent
+from config import load_config as load_app_config
 from llm import create_provider
 from pipeline import Pipeline, load_pipeline
 from state import APP_STATE
-from tools.browser.manager import BROWSER
+from tools.browser.manager import BROWSER, find_chrome
 from tools.browser.youtube.impl import configure as configure_browser
-from tools.browser.manager import find_chrome
 from websockets.asyncio.server import ServerConnection, serve
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [server] %(message)s", datefmt="%H:%M:%S")
@@ -92,6 +92,7 @@ async def handle_client(
 
 async def main() -> None:
     cfg = load_config()
+    app_config = load_app_config()
 
     log.info("loading models...")
     pipeline = load_pipeline(cfg)
@@ -102,6 +103,7 @@ async def main() -> None:
         provider=provider,
         language=cfg.get("language", "en"),
         state=APP_STATE,
+        config=app_config,
     )
 
     session_timeout: int = cfg.get("session_timeout", 30)
