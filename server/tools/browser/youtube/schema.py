@@ -22,7 +22,7 @@ class YoutubeSearch(ToolEntry):
 
 class YoutubePlayResult(ToolEntry):
     name = "youtube_play_result"
-    description = "Play the YouTube video at the given position in the current page (search results or homepage). Use browser_results from state to match a title to an index."
+    description = "Play the YouTube video at the given 1-based index from the current context list (search results, homepage videos, or 'Up next' sidebar videos when watching). Match the user's description against the numbered titles in state and pass the index."
     requires_vision = True
     fn = staticmethod(youtube_play_result)
 

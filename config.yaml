@@ -18,6 +18,8 @@ session_timeout: 30                   # seconds of silence before auto-close
 browser_chrome_path: auto             # auto-detect system Chrome, explicit path, or 'playwright' for bundled Chromium
 browser_search_limit: 10              # number of YouTube search results returned to the LLM
 
+log_level: DEBUG                      # DEBUG | INFO | WARNING
+
 input_device: default                 # mic device (headset, Anker S500, etc.)
 feedback_device: default              # audio output device
 feedback_mode: beep                   # beep (wav files) | tts (piper-tts)

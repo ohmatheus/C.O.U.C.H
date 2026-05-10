@@ -6,7 +6,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any, TypeVar
 
-from playwright.sync_api import Page, sync_playwright
+from playwright.sync_api import Browser, BrowserContext, Page, sync_playwright
 
 T = TypeVar("T")
 
@@ -32,6 +32,17 @@ def find_chrome() -> str | None:
     return None
 
 
+def _active_page(ctx: BrowserContext) -> Page:
+    """Return the currently focused tab, falling back to the last page."""
+    for page in ctx.pages:
+        try:
+            if page.evaluate("document.hasFocus()"):
+                return page
+        except Exception:
+            continue
+    return ctx.pages[-1] if ctx.pages else ctx.new_page()
+
+
 class BrowserManager:
     """Thread-safe Playwright manager with a dedicated browser thread.
 
@@ -40,6 +51,9 @@ class BrowserManager:
     Launches Chrome/Chromium via subprocess with no Playwright automation flags
     (so Google sign-in works), then connects to it via CDP.  The same Chrome
     window is reused across server restarts if it is still running.
+
+    Each execute() call resolves the active tab dynamically so that voice
+    commands always target whichever tab currently has focus.
     """
 
     def __init__(self) -> None:
@@ -62,14 +76,12 @@ class BrowserManager:
             self._thread.start()
         self._ready.wait()
 
-    def _open_page(self, pw: Any) -> Page:
+    def _connect_or_launch(self, pw: Any) -> Browser:
         cdp_url = f"http://localhost:{_DEBUG_PORT}"
         executable = self._chrome_path or "chromium-browser"
 
         try:
-            browser = pw.chromium.connect_over_cdp(cdp_url)
-            ctx = browser.contexts[0] if browser.contexts else browser.new_context()
-            return ctx.new_page()
+            return pw.chromium.connect_over_cdp(cdp_url)
         except Exception:
             pass
 
@@ -85,9 +97,7 @@ class BrowserManager:
         for _ in range(20):
             time.sleep(0.5)
             try:
-                browser = pw.chromium.connect_over_cdp(cdp_url)
-                ctx = browser.contexts[0] if browser.contexts else browser.new_context()
-                return ctx.new_page()
+                return pw.chromium.connect_over_cdp(cdp_url)
             except Exception:
                 continue
 
@@ -95,7 +105,7 @@ class BrowserManager:
 
     def _loop(self) -> None:
         with sync_playwright() as pw:
-            page = self._open_page(pw)
+            browser = self._connect_or_launch(pw)
             self._ready.set()
 
             while True:
@@ -104,6 +114,8 @@ class BrowserManager:
                     break
                 fn, resp_q = item
                 try:
+                    ctx = browser.contexts[0] if browser.contexts else browser.new_context()
+                    page = _active_page(ctx)
                     resp_q.put(("ok", fn(page)))
                 except Exception as exc:
                     resp_q.put(("err", exc))

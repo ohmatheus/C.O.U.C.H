@@ -21,7 +21,7 @@ Rules:
 - NEVER call stop_listening unless the user explicitly asks to stop listening.
 - To open a website (e.g. "open YouTube", "go to Reddit"), use goto_url. NEVER use youtube_search just to open YouTube.
 - Only use youtube_search when the user wants to search for specific content (e.g. "search for cat videos").
-- When state.youtube.search_results is non-empty and the user asks to play a video (by title, topic, or description), match against those results and call youtube_play_result with the 1-based index. Do NOT search again.
+- IMPORTANT: If the context lists numbered videos — whether search results, homepage videos, or "Up next" sidebar entries — and the user refers to any video by title, topic, description, or position number, you MUST call youtube_play_result with the matching 1-based index. Never call youtube_search for something already listed in context.
 - After goto_url completes, stop — do not call any other tool.
 """
 

@@ -19,6 +19,15 @@ from websockets.asyncio.server import ServerConnection, serve
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [server] %(message)s", datefmt="%H:%M:%S")
 log = logging.getLogger(__name__)
 
+_APP_MODULES = ("agent", "snapshot", "pipeline", "server", "tools", "config", "state", "llm", "utils")
+
+
+def _apply_log_level(level: str) -> None:
+    if level == "INFO":
+        return
+    for name in _APP_MODULES:
+        logging.getLogger(name).setLevel(level)
+
 _CONFIG_PATH = Path(__file__).parent.parent / "config.yaml"
 
 
@@ -92,6 +101,7 @@ async def handle_client(
 
 async def main() -> None:
     cfg = load_config()
+    _apply_log_level(cfg.get("log_level", "INFO").upper())
     app_config = load_app_config()
 
     log.info("loading models...")
