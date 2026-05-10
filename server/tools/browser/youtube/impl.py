@@ -3,7 +3,7 @@ from typing import Any
 
 from playwright.sync_api import Page
 
-from tools.browser_manager import BROWSER
+from tools.browser.manager import BROWSER
 
 _SEARCH_LIMIT: int = 10
 
@@ -53,30 +53,18 @@ def youtube_play_result(index: int, state: dict[str, Any], **_kwargs: object) ->
     return f"Now playing: {title}"
 
 
-def youtube_toggle_pause(_state: dict[str, Any]) -> str:
+def youtube_toggle_pause(_state: dict[str, Any], **_kwargs: object) -> str:
     BROWSER.execute(lambda page: page.keyboard.press("k"))
     return "Toggled pause/play"
 
 
-def youtube_toggle_fullscreen(_state: dict[str, Any]) -> str:
+def youtube_toggle_fullscreen(_state: dict[str, Any], **_kwargs: object) -> str:
     BROWSER.execute(lambda page: page.keyboard.press("f"))
     return "Toggled fullscreen"
 
 
-def youtube_toggle_mute(_state: dict[str, Any]) -> str:
+def youtube_toggle_mute(_state: dict[str, Any], **_kwargs: object) -> str:
     BROWSER.execute(lambda page: page.keyboard.press("m"))
     return "Toggled mute"
 
 
-def goto_url(url: str, state: dict[str, Any], **_kwargs: object) -> str:
-    def _do(page: Page) -> str:
-        page.goto(url)
-        return page.title()
-
-    try:
-        title = BROWSER.execute(_do)
-    except Exception as exc:
-        return f"Navigation failed: {exc}"
-    state["active_app"] = None
-    state["browser_results"] = []
-    return f"Navigated to: {title}"

@@ -66,7 +66,6 @@ class BrowserManager:
         cdp_url = f"http://localhost:{_DEBUG_PORT}"
         executable = self._chrome_path or "chromium-browser"
 
-        # Try to connect to an already-running instance first.
         try:
             browser = pw.chromium.connect_over_cdp(cdp_url)
             ctx = browser.contexts[0] if browser.contexts else browser.new_context()
@@ -74,7 +73,6 @@ class BrowserManager:
         except Exception:
             pass
 
-        # Launch Chrome ourselves — no Playwright automation flags injected.
         _PROFILE_DIR.mkdir(parents=True, exist_ok=True)
         subprocess.Popen([
             executable,
@@ -109,7 +107,6 @@ class BrowserManager:
                     resp_q.put(("ok", fn(page)))
                 except Exception as exc:
                     resp_q.put(("err", exc))
-            # Leave Chrome open — user may still be browsing.
 
     def execute(self, fn: Callable[[Page], T]) -> T:
         if self._thread is None:

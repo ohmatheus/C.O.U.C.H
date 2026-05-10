@@ -3,8 +3,8 @@ import logging
 from typing import Any
 
 from llm.base import BaseLLMProvider
-from tools import DISPATCH, TOOL_DEFINITIONS
-from tools.system import STOP_SENTINEL
+from tools import AppGroup, get_dispatch_for, get_tool_defs_for
+from tools.general.impl import STOP_SENTINEL
 
 log = logging.getLogger(__name__)
 
@@ -24,6 +24,19 @@ Rules:
 - After goto_url completes, stop — do not call any other tool.
 """
 
+_ROUTER_PROMPT = """\
+You are a command router for a voice assistant. Given a voice command, identify which application(s) it targets.
+Available apps:
+- GENERAL: volume control, keystrokes, system commands, stopping the assistant
+- YOUTUBE: YouTube videos, search, playback
+- CHROME: open a website or navigate to a URL
+- SPOTIFY: music, playlists, podcasts via Spotify
+- NOTE: shopping lists, notes, reminders
+
+Reply with the app name only (e.g. "SPOTIFY"). If multiple apply, comma-separate them (e.g. "GENERAL,YOUTUBE").
+Reply in uppercase. No explanation, no punctuation, just the app name(s).
+"""
+
 
 class Agent:
     """Provider-agnostic agentic loop: transcript → tool calls → feedback signal."""
@@ -32,6 +45,24 @@ class Agent:
         self._provider = provider
         self._language = language
         self._state = state
+
+    def _classify(self, transcript: str) -> list[AppGroup]:
+        text, _ = self._provider.complete(
+            messages=[{"role": "user", "content": transcript}],
+            tools=[],
+            system=_ROUTER_PROMPT,
+        )
+        groups: list[AppGroup] = [AppGroup.GENERAL]
+        for token in (text or "").upper().split(","):
+            token = token.strip()
+            try:
+                group = AppGroup(token.lower())
+                if group not in groups:
+                    groups.append(group)
+            except ValueError:
+                pass
+        log.info("classified %r → %s", transcript, [g.value for g in groups])
+        return groups
 
     def _build_system_prompt(self) -> str:
         prompt = _SYSTEM_PROMPT.format(language=self._language)
@@ -47,6 +78,15 @@ class Agent:
             "session_end"  — stop_listening tool was called
             None           — no tool matched (non-command utterance)
         """
+        try:
+            groups = self._classify(transcript)
+        except Exception as exc:
+            log.error("classifier error: %s", exc)
+            groups = list(AppGroup)
+
+        tool_defs = get_tool_defs_for(groups)
+        dispatch = get_dispatch_for(groups)
+
         messages: list[dict[str, Any]] = [
             {"role": "user", "content": transcript},
         ]
@@ -55,7 +95,7 @@ class Agent:
 
         try:
             for _ in range(_MAX_TOOL_CALLS):
-                text, tool_calls = self._provider.complete(messages, TOOL_DEFINITIONS, system)
+                text, tool_calls = self._provider.complete(messages, tool_defs, system)
 
                 if not tool_calls:
                     break
@@ -72,11 +112,11 @@ class Agent:
                 for tc in tool_calls:
                     log.info("tool call: %s(%s)", tc.name, tc.arguments)
 
-                    if tc.name not in DISPATCH:
+                    if tc.name not in dispatch:
                         log.warning("unknown tool: %s", tc.name)
-                        result = f"Outil inconnu : {tc.name}"
+                        result = f"Unknown tool: {tc.name}"
                     else:
-                        result = DISPATCH[tc.name](**tc.arguments, state=self._state)
+                        result = dispatch[tc.name](**tc.arguments, state=self._state)
 
                     log.info("tool result: %s", result)
 

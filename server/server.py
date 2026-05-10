@@ -11,7 +11,9 @@ from agent import Agent
 from llm import create_provider
 from pipeline import Pipeline, load_pipeline
 from state import APP_STATE
-from tools.browser_manager import BROWSER
+from tools.browser.manager import BROWSER
+from tools.browser.youtube.impl import configure as configure_browser
+from tools.browser.manager import find_chrome
 from websockets.asyncio.server import ServerConnection, serve
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [server] %(message)s", datefmt="%H:%M:%S")
@@ -106,7 +108,6 @@ async def main() -> None:
 
     chrome_path_cfg: str = cfg.get("browser_chrome_path", "auto")
     if chrome_path_cfg == "auto":
-        from tools.browser_manager import find_chrome
         chrome_path: str | None = find_chrome()
         log.info("browser: %s", chrome_path or "Playwright's bundled Chromium")
     elif chrome_path_cfg == "playwright":
@@ -115,7 +116,6 @@ async def main() -> None:
         chrome_path = chrome_path_cfg
     BROWSER.configure(chrome_path=chrome_path)
 
-    from tools.browser import configure as configure_browser
     configure_browser(search_limit=cfg.get("browser_search_limit", 10))
 
     host: str = cfg["server_host"]

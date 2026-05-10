@@ -21,7 +21,7 @@ class BaseLLMProvider(ABC):
         """Single LLM call. Returns (text, tool_calls) in canonical form.
 
         messages: canonical OpenAI-style history (no system message — passed separately).
-        tools: OpenAI-style TOOL_DEFINITIONS.
+        tools: Anthropic-native tool dicts (name, description, input_schema).
         system: system prompt string.
         """
         ...

@@ -6,6 +6,17 @@ import ollama
 from llm.base import BaseLLMProvider, ToolCall
 
 
+def _to_openai_tool(t: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "type": "function",
+        "function": {
+            "name": t["name"],
+            "description": t.get("description", ""),
+            "parameters": t["input_schema"],
+        },
+    }
+
+
 def _to_ollama_messages(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
     result: list[dict[str, Any]] = []
     for msg in messages:
@@ -41,7 +52,7 @@ class OllamaProvider(BaseLLMProvider):
         response = ollama.chat(
             model=self._model,
             messages=ollama_messages,
-            tools=tools,
+            tools=[_to_openai_tool(t) for t in tools],
             options={"keep_alive": self._keepalive},
         )
         msg = response.message

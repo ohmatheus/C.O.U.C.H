@@ -7,17 +7,6 @@ from llm.base import BaseLLMProvider, ToolCall
 _MAX_TOKENS: int = 1024
 
 
-def _to_anthropic_tools(tools: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    return [
-        {
-            "name": t["function"]["name"],
-            "description": t["function"]["description"],
-            "input_schema": t["function"]["parameters"],
-        }
-        for t in tools
-    ]
-
-
 def _to_anthropic_messages(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
     result: list[dict[str, Any]] = []
     i = 0
@@ -73,7 +62,7 @@ class AnthropicProvider(BaseLLMProvider):
             max_tokens=_MAX_TOKENS,
             system=system,
             messages=_to_anthropic_messages(messages),
-            tools=_to_anthropic_tools(tools),  # type: ignore[arg-type]
+            tools=tools,  # type: ignore[arg-type]
         )
 
         tool_calls: list[ToolCall] = []

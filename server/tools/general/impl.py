@@ -1,7 +1,6 @@
 import subprocess
 from typing import Any
 
-# Returned by stop_listening so the agent knows to end the session.
 STOP_SENTINEL = "__stop_listening__"
 
 
