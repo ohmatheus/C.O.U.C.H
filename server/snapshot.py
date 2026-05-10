@@ -1,21 +1,15 @@
 import base64
 import logging
-from collections.abc import Callable
 
 from playwright.sync_api import Page
 
 from state import AppState
-from tools.browser.chrome.context import chrome_snapshot
+from tools import get_snapshot_fns
 from tools.browser.manager import BROWSER
-from tools.browser.youtube.context import youtube_snapshot
 from utils.image import resize_screenshot
 
 log = logging.getLogger(__name__)
 
-_SNAPSHOT_FNS: dict[str, Callable[[Page, AppState], None]] = {
-    "youtube": youtube_snapshot,
-    "chrome": chrome_snapshot,
-}
 
 def take_snapshot(
     state: AppState,
@@ -26,7 +20,7 @@ def take_snapshot(
 
     Returns a base64-encoded JPEG string if take_screenshot is True, else None.
     """
-    active = {g: _SNAPSHOT_FNS[g] for g in groups if g in _SNAPSHOT_FNS}
+    active = get_snapshot_fns(groups)
     if not active:
         return None
 

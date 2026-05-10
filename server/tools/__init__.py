@@ -1,8 +1,11 @@
 from collections.abc import Callable
+from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Any
 
+from tools.browser.chrome.context import chrome_snapshot
 from tools.browser.chrome.schema import ENTRIES as _CHROME_ENTRIES
+from tools.browser.youtube.context import youtube_snapshot
 from tools.browser.youtube.schema import ENTRIES as _YOUTUBE_ENTRIES
 from tools.general.schema import ENTRIES as _GENERAL_ENTRIES
 from tools.registry import ToolEntry, build_dispatch
@@ -16,16 +19,38 @@ class AppGroup(StrEnum):
     NOTE = "note"
 
 
-# Child → parent(s): resolving a child automatically includes its parents.
+SnapshotFn = Callable[..., None]
+
+
+@dataclass
+class AppDescriptor:
+    group: AppGroup
+    tool_entries: list[type[ToolEntry]]
+    snapshot_fn: SnapshotFn | None = None
+    parents: list[AppGroup] = field(default_factory=list)
+
+
+APP_REGISTRY: list[AppDescriptor] = [
+    AppDescriptor(AppGroup.GENERAL, _GENERAL_ENTRIES),
+    AppDescriptor(AppGroup.CHROME, _CHROME_ENTRIES, snapshot_fn=chrome_snapshot),
+    AppDescriptor(AppGroup.YOUTUBE, _YOUTUBE_ENTRIES, snapshot_fn=youtube_snapshot, parents=[AppGroup.CHROME]),
+]
+
 _PARENTS: dict[AppGroup, list[AppGroup]] = {
-    AppGroup.YOUTUBE: [AppGroup.CHROME],
+    d.group: d.parents for d in APP_REGISTRY if d.parents
 }
 
 TOOL_GROUPS: dict[AppGroup, list[type[ToolEntry]]] = {
-    AppGroup.GENERAL: _GENERAL_ENTRIES,
-    AppGroup.YOUTUBE: _YOUTUBE_ENTRIES,
-    AppGroup.CHROME: _CHROME_ENTRIES,
+    d.group: d.tool_entries for d in APP_REGISTRY
 }
+
+
+def get_snapshot_fns(groups: list[str]) -> dict[str, SnapshotFn]:
+    return {
+        d.group.value: d.snapshot_fn
+        for d in APP_REGISTRY
+        if d.group.value in groups and d.snapshot_fn is not None
+    }
 
 
 def resolve_groups(groups: list[AppGroup]) -> list[AppGroup]:
