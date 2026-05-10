@@ -2,7 +2,7 @@ import json
 import logging
 from typing import Any
 
-import ollama
+from llm.base import BaseLLMProvider
 from tools import DISPATCH, TOOL_DEFINITIONS
 from tools.system import STOP_SENTINEL
 
@@ -26,11 +26,10 @@ Rules:
 
 
 class Agent:
-    """Ollama agentic loop: transcript → tool calls → feedback signal."""
+    """Provider-agnostic agentic loop: transcript → tool calls → feedback signal."""
 
-    def __init__(self, model: str, keepalive: int, language: str, state: dict[str, Any]) -> None:
-        self._model = model
-        self._keepalive = keepalive
+    def __init__(self, provider: BaseLLMProvider, language: str, state: dict[str, Any]) -> None:
+        self._provider = provider
         self._language = language
         self._state = state
 
@@ -44,40 +43,40 @@ class Agent:
 
         Returns:
             "beep_ok"      — at least one tool executed successfully
-            "beep_error"   — a tool or Ollama call raised an exception
+            "beep_error"   — a tool or LLM call raised an exception
             "session_end"  — stop_listening tool was called
             None           — no tool matched (non-command utterance)
         """
         messages: list[dict[str, Any]] = [
-            {"role": "system", "content": self._build_system_prompt()},
             {"role": "user", "content": transcript},
         ]
+        system = self._build_system_prompt()
         tool_called = False
 
         try:
             for _ in range(_MAX_TOOL_CALLS):
-                response = ollama.chat(
-                    model=self._model,
-                    messages=messages,
-                    tools=TOOL_DEFINITIONS,
-                    options={"keep_alive": self._keepalive},
-                )
-                msg = response.message
-                if not msg.tool_calls:
+                text, tool_calls = self._provider.complete(messages, TOOL_DEFINITIONS, system)
+
+                if not tool_calls:
                     break
 
-                messages.append({"role": "assistant", "content": msg.content or "", "tool_calls": msg.tool_calls})
+                messages.append({
+                    "role": "assistant",
+                    "content": text,
+                    "tool_calls": [
+                        {"id": tc.id, "name": tc.name, "arguments": tc.arguments}
+                        for tc in tool_calls
+                    ],
+                })
 
-                for call in msg.tool_calls:
-                    name = call.function.name
-                    args: dict[str, Any] = dict(call.function.arguments)
-                    log.info("tool call: %s(%s)", name, args)
+                for tc in tool_calls:
+                    log.info("tool call: %s(%s)", tc.name, tc.arguments)
 
-                    if name not in DISPATCH:
-                        log.warning("unknown tool: %s", name)
-                        result = f"Outil inconnu : {name}"
+                    if tc.name not in DISPATCH:
+                        log.warning("unknown tool: %s", tc.name)
+                        result = f"Outil inconnu : {tc.name}"
                     else:
-                        result = DISPATCH[name](**args, state=self._state)
+                        result = DISPATCH[tc.name](**tc.arguments, state=self._state)
 
                     log.info("tool result: %s", result)
 
@@ -89,7 +88,11 @@ class Agent:
                         return None
 
                     tool_called = True
-                    messages.append({"role": "tool", "content": result})
+                    messages.append({
+                        "role": "tool",
+                        "tool_call_id": tc.id,
+                        "content": result,
+                    })
 
         except Exception as exc:
             log.error("agent error: %s", exc)

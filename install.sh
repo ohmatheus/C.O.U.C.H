@@ -106,8 +106,7 @@ language: fr
 wake_word: hey_jarvis
 
 session_mode: continuous
-session_timeout: 5
-stop_phrase: "arrête d'écouter"
+session_timeout: 20
 
 input_device: default
 feedback_device: default

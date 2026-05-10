@@ -1,24 +1,24 @@
 whisper_model: large-v3
-whisper_device: cuda          # int8_float16 on GPU — ~1.5 GB VRAM (leaves room for LLM)
+whisper_device: cuda                  # int8_float16 on GPU — ~1.5 GB VRAM (leaves room for LLM)
 
-llm_model: qwen2.5:7b
-llm_keepalive: -1             # never unload from VRAM
+llm_provider: anthropic               # ollama | anthropic
+llm_model: claude-haiku-4-5-20251001  #qwen2.5:7b
+llm_keepalive: -1                     # never unload from VRAM (ollama only)
 
 server_host: 0.0.0.0
 server_port: 8765
-server_url: ws://localhost:8765  # change to Pi IP for split setup
+server_url: ws://localhost:8765       # change to Pi IP for split setup
 
 language: fr
-wake_word: hey_jarvis             # built-in placeholder — train custom "hey couch" model later
+wake_word: hey_jarvis                 # built-in placeholder — train custom "hey couch" model later
 
-session_mode: continuous         # single | continuous
-session_timeout: 30               # seconds of silence before auto-close
-stop_phrase: "arrête d'écouter"  # voice command to end session
+session_mode: continuous              # single | continuous
+session_timeout: 30                   # seconds of silence before auto-close
 
-browser_chrome_path: auto         # auto-detect system Chrome, explicit path, or 'playwright' for bundled Chromium
-browser_search_limit: 10          # number of YouTube search results returned to the LLM
+browser_chrome_path: auto             # auto-detect system Chrome, explicit path, or 'playwright' for bundled Chromium
+browser_search_limit: 10              # number of YouTube search results returned to the LLM
 
-input_device: default            # mic device (headset, Anker S500, etc.)
-feedback_device: default         # audio output device
-feedback_mode: beep              # beep (wav files) | tts (piper-tts)
-tts_model: fr_FR-siwis-medium    # only used if feedback_mode: tts
+input_device: default                 # mic device (headset, Anker S500, etc.)
+feedback_device: default              # audio output device
+feedback_mode: beep                   # beep (wav files) | tts (piper-tts)
+tts_model: fr_FR-siwis-medium         # only used if feedback_mode: tts

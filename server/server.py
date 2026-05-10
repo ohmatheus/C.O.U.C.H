@@ -8,6 +8,7 @@ from typing import Any
 
 import yaml
 from agent import Agent
+from llm import create_provider
 from pipeline import Pipeline, load_pipeline
 from state import APP_STATE
 from tools.browser_manager import BROWSER
@@ -94,9 +95,9 @@ async def main() -> None:
     pipeline = load_pipeline(cfg)
     log.info("models ready")
 
+    provider = create_provider(cfg)
     agent = Agent(
-        model=cfg["llm_model"],
-        keepalive=cfg.get("llm_keepalive", -1),
+        provider=provider,
         language=cfg.get("language", "en"),
         state=APP_STATE,
     )
